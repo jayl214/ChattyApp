@@ -3,49 +3,66 @@ import React, {Component} from 'react';
 import MessageList from './MessageList.jsx';
 import ChatBar from './ChatBar.jsx';
 
+const socket = new WebSocket("ws://localhost:3001");
+console.log('connected to server');
+
 class App extends Component {
 
   constructor(props){
     super(props);
     this.state = {
-          currentUser: {name: "Bob"}, // optional. if currentUser is not defined, it means the user is Anonymous
-          messages: [
-            {
-              username: "Bob",
-              content: "Has anyone seen my marbles?",
-            },
-            {
-              username: "Anonymous",
-              content: "No, I think you lost them. You lost your marbles Bob. You lost them for good."
-            }
-          ]
+          currentUser: {name: "Anonymous"}, // optional. if currentUser is not defined, it means the user is Anonymous
+          messages: []
         }
   }
 
 
   componentDidMount() {
-  console.log("componentDidMount <App />");
+    console.log("componentDidMount <App />");
 
+    socket.onmessage = (response) => {
+      let newMessage = JSON.parse(response.data);
+      console.log(newMessage);
+      if (newMessage.type === "incomingMessage"){
+        let messages = this.state.messages.concat(newMessage);
+        this.setState({messages: messages});
+        console.log(this.state.messages);
 
+      } else if (newMessage.type === "incomingNotification"){
+        console.log(newMessage.notification)
+        const updatedUsername = {name: newMessage.newName}
 
-    setTimeout(() => {
-      console.log("Simulating incoming message");
-      // Add a new message to the list of messages in the data store
-      const newMessage = {id: 3, username: "Michelle", content: "Hello there!"};
-      const messages = this.state.messages.concat(newMessage)
-      // Update the state of the app component.
-      // Calling setState will trigger a call to render() in App and all child components.
-      this.setState({messages: messages})
-    }, 3000);
-  }
+        let messages = this.state.messages.concat(newMessage);
 
-  test(event){
-    if (event.keyCode === 13){
-      const newMessage = {username: this.state.currentUser.name, content: event.target.value}
-      const messages = this.state.messages.concat(newMessage)
-      this.setState({messages: messages})
+        this.setState({messages: messages});
+        console.log(this.state.messages);
+        this.setState({currentUser: updatedUsername})
+      }
     }
   }
+
+  sendMessageOnEnter(event){
+    if (event.keyCode === 13){
+      const newMessage = {type:"postMessage", username: this.state.currentUser.name, content: event.target.value}
+      console.log(JSON.stringify(newMessage), 'sent to server')
+      socket.send(JSON.stringify(newMessage));
+
+    }
+  }
+
+  changeUsername(event){
+    if (event.keyCode === 13) {
+      const newUsername = {type: "postNotification", newName: event.target.value, oldName: this.state.currentUser.name}
+      console.log(JSON.stringify(newUsername));
+      socket.send(JSON.stringify(newUsername));
+
+      this.setState({currentUser:newUsername});
+      console.log(this.state.currentUser)
+
+    }
+  }
+
+
 
 
 
@@ -59,10 +76,11 @@ class App extends Component {
 
         <MessageList messages = {this.state.messages} />
 
-        <ChatBar name = {this.state.currentUser.name} changeFunc = {this.test.bind(this)}  />
-        //bind will anchor the value of 'this' to refer to app.jsx when in function changeFunc in Chatbar
+        <ChatBar name = {this.state.currentUser.name} messageFunction = {this.sendMessageOnEnter.bind(this)} usernameFunction = {this.changeUsername.bind(this)}  />
+
       </div>
     );
   }
 }
 export default App;
+// bind will anchor the value of 'this' to refer to app.jsx when in function changeFunc in Chatbar
