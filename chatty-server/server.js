@@ -54,12 +54,10 @@ wss.on('connection', function connection(ws) {
 // When a client connects they are assigned a socket, represented by
 // the ws parameter in the callback.
 wss.on('connection', (ws) => {
-  let counter = 0
+  let counter = wss.clients.size
   let connectionNotification = {};
   console.log('Client connected');
-  wss.clients.forEach(function each(client){
-    counter ++;
-  })
+
 
   connectionNotification = {type: "connectionNotification", content:"A new user has connected!", counter:`${counter}`}
   wss.clients.forEach(function each(client){
@@ -71,10 +69,8 @@ wss.on('connection', (ws) => {
  // Set up a callback for when a client closes the socket. This usually means they closed their browser.
   ws.on('close', () => {
     console.log('Client disconnected')
-    counter = 0;
-    wss.clients.forEach(function each(client){
-      counter++;
-    })
+    counter = wss.clients.size;
+    //
 
     connectionNotification = {type: "connectionNotification", content: "A user has disconnected", counter: `${counter}`}
     wss.clients.forEach(function each(client){

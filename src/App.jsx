@@ -76,7 +76,7 @@ class App extends Component {
       socket.send(JSON.stringify(newUsername));
 
       this.state.currentUser.name = newUsername.newName
-      console.log(this.state.currentUser)
+      // console.log(this.state.currentUser)
 
     }
   }
